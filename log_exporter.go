@@ -4,12 +4,10 @@ import (
 	logs "go.opentelemetry.io/proto/otlp/logs/v1"
 )
 
-type LogRecord logs.LogRecord
-
 // A LogExporter is used to export log for example, to an Open
 // Telemetry collector.
 type LogExporter interface {
-	Export(log *LogRecord)
+	Export(log *logs.LogRecord)
 }
 
 // Creates a Log exporter that exports nothing.
@@ -19,4 +17,4 @@ func NoopLogExporter() LogExporter {
 
 type noopLogExporter struct{}
 
-func (p *noopLogExporter) Export(log *LogRecord) {}
+func (p *noopLogExporter) Export(log *logs.LogRecord) {}

@@ -4,21 +4,23 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	logs "go.opentelemetry.io/proto/otlp/logs/v1"
 )
 
-type logBatchCallback func([]*LogRecord)
+type logBatchCallback func([]*logs.LogRecord)
 
 type LogProcessor interface {
 	// batch adds the record to the current batch. If the current
 	// batch is ready to be sent, callback with the current batch
 	// content will be called.
-	batch(record *LogRecord, callback logBatchCallback)
+	batch(record *logs.LogRecord, callback logBatchCallback)
 }
 
 type syncProcessor struct{}
 
-func (b *syncProcessor) batch(record *LogRecord, callback logBatchCallback) {
-	callback([]*LogRecord{record})
+func (b *syncProcessor) batch(record *logs.LogRecord, callback logBatchCallback) {
+	callback([]*logs.LogRecord{record})
 }
 
 type batchProcessorOptions struct {
@@ -67,7 +69,7 @@ type batchProcessor struct {
 	cond *sync.Cond
 
 	timeout time.Duration
-	buffer  []*LogRecord
+	buffer  []*logs.LogRecord
 	size    atomic.Int32
 }
 
@@ -76,14 +78,14 @@ func newBatchProcessor(options ...BatchLogProcessorOption) LogProcessor {
 
 	res := &batchProcessor{
 		timeout: opts.BatchTimeout,
-		buffer:  make([]*LogRecord, opts.MaxQueueSize),
+		buffer:  make([]*logs.LogRecord, opts.MaxQueueSize),
 	}
 
 	res.cond = sync.NewCond(res.mx.RLocker())
 	return res
 }
 
-func (b *batchProcessor) batch(record *LogRecord, callback logBatchCallback) {
+func (b *batchProcessor) batch(record *logs.LogRecord, callback logBatchCallback) {
 	b.mx.RLock()
 	defer b.mx.RUnlock()
 
@@ -118,7 +120,7 @@ func (b *batchProcessor) process(callback logBatchCallback) {
 	defer b.cond.Broadcast()
 
 	batch := b.buffer[:size]
-	b.buffer = make([]*LogRecord, len(b.buffer))
+	b.buffer = make([]*logs.LogRecord, len(b.buffer))
 	b.size.Store(0)
 
 	go callback(batch)

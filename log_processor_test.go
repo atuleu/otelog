@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	logs "go.opentelemetry.io/proto/otlp/logs/v1"
 )
 
 func getOrTimeout[T any](ch <-chan T, timeout time.Duration, t *testing.T) (res T, ok bool) {
@@ -22,7 +24,7 @@ func TestBatchLogProcessor_sendsAfterTimeout(t *testing.T) {
 	called := make(chan struct{})
 
 	log.Printf("coucou")
-	processor.batch(nil, func(batch []*LogRecord) {
+	processor.batch(nil, func(batch []*logs.LogRecord) {
 		defer close(called)
 		if len(batch) != 1 {
 			t.Errorf("len(batch) = %d, wants 1", len(batch))
@@ -42,7 +44,7 @@ func TestBatchLogProcessor_sendsAftermaxQueueSize(t *testing.T) {
 	called := make(chan struct{})
 
 	nbCalls := atomic.Int32{}
-	callback := func(batch []*LogRecord) {
+	callback := func(batch []*logs.LogRecord) {
 		defer close(called)
 
 		calls := nbCalls.Add(1)
