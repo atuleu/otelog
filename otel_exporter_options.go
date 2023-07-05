@@ -20,14 +20,16 @@ type LogExporterOption interface {
 	apply(*logExporterOptions)
 }
 
-type resourceOption resource.Resource
+type resourceOption struct {
+	r *resource.Resource
+}
 
 func (o resourceOption) apply(opts *logExporterOptions) {
-	opts.resource = (*resource.Resource)(o)
+	opts.resource = o.r
 }
 
 func WithResource(r *resource.Resource) LogExporterOption {
-	return (resourceOption)(r)
+	return resourceOption{r}
 }
 
 type scopeOption instrumentation.Scope

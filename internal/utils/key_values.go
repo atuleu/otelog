@@ -80,38 +80,94 @@ func boolSliceValues(vals []bool) []*common.AnyValue {
 	return converted
 }
 
-func int64SliceValues(vals []int64) []*common.AnyValue {
+type Int interface {
+	~int | ~uint | ~int32 | ~uint32 | ~int64 | ~uint64
+}
+
+func int64SliceValues[T Int](vals []T) []*common.AnyValue {
 	converted := make([]*common.AnyValue, len(vals))
 	for i, v := range vals {
 		converted[i] = &common.AnyValue{
 			Value: &common.AnyValue_IntValue{
-				IntValue: v,
+				IntValue: int64(v),
 			},
 		}
 	}
 	return converted
 }
 
-func float64SliceValues(vals []float64) []*common.AnyValue {
+type Float interface {
+	~float32 | ~float64
+}
+
+func float64SliceValues[T Float](vals []T) []*common.AnyValue {
 	converted := make([]*common.AnyValue, len(vals))
 	for i, v := range vals {
 		converted[i] = &common.AnyValue{
 			Value: &common.AnyValue_DoubleValue{
-				DoubleValue: v,
+				DoubleValue: float64(v),
 			},
 		}
 	}
 	return converted
 }
 
-func stringSliceValues(vals []string) []*common.AnyValue {
+func stringSliceValues[T ~string](vals []T) []*common.AnyValue {
 	converted := make([]*common.AnyValue, len(vals))
 	for i, v := range vals {
 		converted[i] = &common.AnyValue{
 			Value: &common.AnyValue_StringValue{
-				StringValue: v,
+				StringValue: string(v),
 			},
 		}
 	}
 	return converted
+}
+
+func ValueFromGo(v interface{}) *common.AnyValue {
+	res := &common.AnyValue{}
+	switch vv := v.(type) {
+	case bool:
+		res.Value = &common.AnyValue_BoolValue{
+			BoolValue: vv,
+		}
+	case []bool:
+		res.Value = &common.AnyValue_ArrayValue{
+			ArrayValue: &common.ArrayValue{
+				Values: boolSliceValues(vv),
+			},
+		}
+	case int:
+		res.Value = &common.AnyValue_IntValue{
+			IntValue: int64(vv),
+		}
+	case []int:
+		res.Value = &common.AnyValue_ArrayValue{
+			ArrayValue: &common.ArrayValue{
+				Values: int64SliceValues(vv),
+			},
+		}
+	case float64:
+		res.Value = &common.AnyValue_DoubleValue{
+			DoubleValue: vv,
+		}
+	case []float64:
+		res.Value = &common.AnyValue_ArrayValue{
+			ArrayValue: &common.ArrayValue{
+				Values: float64SliceValues(vv),
+			},
+		}
+	case string:
+		res.Value = &common.AnyValue_StringValue{
+			StringValue: vv,
+		}
+	case []string:
+		res.Value = &common.AnyValue_ArrayValue{
+			ArrayValue: &common.ArrayValue{
+				Values: stringSliceValues(vv),
+			},
+		}
+	}
+
+	return res
 }
