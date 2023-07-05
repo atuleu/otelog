@@ -1,4 +1,9 @@
 
+v0.1.3 / 2023-07-05
+===================
+
+  * Allows to share the same gRPC connection for collector
+
 v0.1.2 / 2023-07-05
 ===================
 
