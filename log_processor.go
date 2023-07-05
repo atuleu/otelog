@@ -10,6 +10,7 @@ import (
 
 type logBatchCallback func([]*logs.LogRecord)
 
+// LogProcessor process incoming LogRecord and batches them if needed.
 type LogProcessor interface {
 	// batch adds the record to the current batch. If the current
 	// batch is ready to be sent, callback with the current batch
@@ -28,6 +29,7 @@ type batchProcessorOptions struct {
 	BatchTimeout time.Duration
 }
 
+// BatchLogProcessorOption is an Option for WithBatchLogProcessor()
 type BatchLogProcessorOption interface {
 	apply(options *batchProcessorOptions)
 }
@@ -38,6 +40,8 @@ func (t batchLogTimeout) apply(opts *batchProcessorOptions) {
 	opts.BatchTimeout = time.Duration(t)
 }
 
+// WithBatchTimeout sets the timeout after which a batch will be
+// exported regardless of the number of queued LogRecord.
 func WithBatchTimeout(timeout time.Duration) BatchLogProcessorOption {
 	return batchLogTimeout(timeout)
 }
@@ -48,6 +52,8 @@ func (s batchQueueSize) apply(opts *batchProcessorOptions) {
 	opts.MaxQueueSize = int(s)
 }
 
+// WithMaxQueueSize sets the max queue size before a batch will be
+// emitted.
 func WithMaxQueueSize(size int) BatchLogProcessorOption {
 	return batchQueueSize(size)
 }

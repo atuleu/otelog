@@ -58,6 +58,10 @@ func buildResource(opts logExporterOptions) *resource.Resource {
 
 }
 
+// Creates a new LogExporter that will export LogRecord to the
+// specified endpoint. The endpoint address must be specified with
+// WithEndpoint(). Credential must be specified with either
+// WithInsecure() or WithTLSCredential().
 func NewLogExporter(options ...LogExporterOption) (LogExporter, error) {
 	opts := newOtelLogExporterOptions(options...)
 
