@@ -12,7 +12,6 @@ import (
 )
 
 type otelExporter struct {
-	conn      *grpc.ClientConn
 	logClient collector.LogsServiceClient
 
 	processor LogProcessor
@@ -65,17 +64,19 @@ func buildResource(opts logExporterOptions) *resource.Resource {
 func NewLogExporter(options ...LogExporterOption) (LogExporter, error) {
 	opts := newOtelLogExporterOptions(options...)
 
-	conn, err := grpc.Dial(opts.endpoint,
-		grpc.WithTransportCredentials(opts.credential),
-	)
-	if err != nil {
-		return nil, err
+	if opts.conn == nil {
+		var err error
+		opts.conn, err = grpc.Dial(opts.endpoint,
+			grpc.WithTransportCredentials(opts.credential),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	client := collector.NewLogsServiceClient(conn)
+	client := collector.NewLogsServiceClient(opts.conn)
 
 	return &otelExporter{
-		conn:      conn,
 		logClient: client,
 		resource:  buildResource(opts),
 		scope:     buildScope(opts),

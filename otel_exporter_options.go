@@ -3,11 +3,13 @@ package otelog
 import (
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type logExporterOptions struct {
+	conn       *grpc.ClientConn
 	endpoint   string
 	credential credentials.TransportCredentials
 
@@ -21,76 +23,68 @@ type LogExporterOption interface {
 	apply(*logExporterOptions)
 }
 
-type resourceOption struct {
-	r *resource.Resource
-}
+type logExporterOptionFunc func(*logExporterOptions)
 
-func (o resourceOption) apply(opts *logExporterOptions) {
-	opts.resource = o.r
+func (f logExporterOptionFunc) apply(opts *logExporterOptions) {
+	f(opts)
 }
 
 // Sets the resource associated with the LogExporter
 func WithResource(r *resource.Resource) LogExporterOption {
-	return resourceOption{r}
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.resource = r
+	})
 }
 
 type scopeOption instrumentation.Scope
 
-func (o scopeOption) apply(opts *logExporterOptions) {
-	opts.scope = (instrumentation.Scope)(o)
-}
-
 // Sets the scope associated with the LogExporter
-func WithScope(r instrumentation.Scope) LogExporterOption {
-	return (scopeOption)(r)
-}
-
-type processorOption struct {
-	p LogProcessor
-}
-
-func (o processorOption) apply(opts *logExporterOptions) {
-	opts.processor = o.p
+func WithScope(s instrumentation.Scope) LogExporterOption {
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.scope = s
+	})
 }
 
 // Sets a LogProcessor that sends every event immediatly. It
 // should be avoided in production.
 func WithSyncer() LogExporterOption {
-	return processorOption{&syncProcessor{}}
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.processor = &syncProcessor{}
+	})
 }
 
 // Sets a LogProcessor that batches logs before exporting them.
 func WithBatchLogProcessor(options ...BatchLogProcessorOption) LogExporterOption {
-	return processorOption{newBatchProcessor(options...)}
-}
-
-type endpointOptions string
-
-func (o endpointOptions) apply(opts *logExporterOptions) {
-	opts.endpoint = (string)(o)
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.processor = newBatchProcessor(options...)
+	})
 }
 
 // Sets the Open Telemetry collector endpoint to export logs to.
 func WithEndpoint(endpoint string) LogExporterOption {
-	return (endpointOptions)(endpoint)
-}
-
-type credentialOptions struct {
-	c credentials.TransportCredentials
-}
-
-func (o credentialOptions) apply(opts *logExporterOptions) {
-	opts.credential = o.c
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.endpoint = endpoint
+	})
 }
 
 // Sets no credential for the OpenTelemetry endpoint.
 func WithInsecure() LogExporterOption {
-	return credentialOptions{insecure.NewCredentials()}
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.credential = insecure.NewCredentials()
+	})
 }
 
 // Sets the gRPC TLS credential to use for the OpenTelemetry endpoint.
 func WithTLSCredentials(c credentials.TransportCredentials) LogExporterOption {
-	return credentialOptions{c}
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.credential = c
+	})
+}
+
+func WithGRPCConn(conn *grpc.ClientConn) LogExporterOption {
+	return logExporterOptionFunc(func(opts *logExporterOptions) {
+		opts.conn = conn
+	})
 }
 
 func newOtelLogExporterOptions(options ...LogExporterOption) logExporterOptions {
