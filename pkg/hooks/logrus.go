@@ -1,3 +1,8 @@
+// Package hooks provide hooks and integration for otelgo to various
+// logging library.
+//
+// Currently only `github.com/sirupsen/logrus` is supported. See
+// NewLogrusHook().
 package hooks
 
 import (
@@ -26,6 +31,14 @@ func (l *logrusHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
+// NewLogrusHook creates a new logrus.Hook that will export all
+// logrus.Entry to the global otelog registered LogExporter. By
+// default no levels are enabled, and must be set with FromLogrusLevel
+// or WithLogrusLevels.
+//
+// If a context.Context containing a valid otel.SpanContext is
+// provided to the logrus.Entry, the exported LogRecord will be
+// automatically linked with the span.
 func NewLogrusHook(options ...LogrusOption) logrus.Hook {
 	opts := newLogrusOptions(options...)
 

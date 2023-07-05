@@ -11,6 +11,7 @@ type logrusOptions []logrus.Level
 
 type logrusOptionApplyFunc func(opts logrusOptions) logrusOptions
 
+// LogrusOption is an option for NewLogrusHook()
 type LogrusOption interface {
 	apply(opts logrusOptions) logrusOptions
 }
@@ -19,6 +20,9 @@ func (f logrusOptionApplyFunc) apply(opts logrusOptions) logrusOptions {
 	return f(opts)
 }
 
+// FromLogrusLevel enables all levels from the specified level. By
+// example `logrus.WarnLevel` will enable `logrus.WarnLevel`
+// `logrus.ErrorLevel` `logrus.FatalLevel` and `logrus.PanicLevel`
 func FromLogrusLevel(level logrus.Level) LogrusOption {
 	levels := make([]logrus.Level, 0, len(logrus.AllLevels))
 	add := false
@@ -35,6 +39,7 @@ func FromLogrusLevel(level logrus.Level) LogrusOption {
 	return WithLogrusLevels(levels)
 }
 
+// WithLogrusLevels enables all provided levels for the hook.
 func WithLogrusLevels(levels []logrus.Level) LogrusOption {
 	return logrusOptionApplyFunc(func(opts logrusOptions) logrusOptions {
 
