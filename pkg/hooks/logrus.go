@@ -27,10 +27,7 @@ func (l *logrusHook) Fire(entry *logrus.Entry) error {
 }
 
 func NewLogrusHook(options ...LogrusOption) logrus.Hook {
-	var opts logrusOptions
-	for _, o := range options {
-		opts = o.apply(opts)
-	}
+	opts := newLogrusOptions(options...)
 
 	return &logrusHook{
 		levels:   ([]logrus.Level)(opts),

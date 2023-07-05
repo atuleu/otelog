@@ -22,7 +22,9 @@ func (f logrusOptionApplyFunc) apply(opts logrusOptions) logrusOptions {
 func FromLogrusLevel(level logrus.Level) LogrusOption {
 	levels := make([]logrus.Level, 0, len(logrus.AllLevels))
 	add := false
-	for _, l := range logrus.AllLevels {
+	for i := range logrus.AllLevels {
+		idx := len(logrus.AllLevels) - 1 - i
+		l := logrus.AllLevels[idx]
 		if add == false && l != level {
 			continue
 		}
@@ -43,9 +45,17 @@ func WithLogrusLevels(levels []logrus.Level) LogrusOption {
 			opts = append(opts, level)
 		}
 		sort.Slice(opts, func(i, j int) bool {
-			return opts[i] < opts[j]
+			return opts[i] > opts[j]
 		})
 
 		return opts
 	})
+}
+
+func newLogrusOptions(options ...LogrusOption) logrusOptions {
+	var res logrusOptions
+	for _, o := range options {
+		res = o.apply(res)
+	}
+	return res
 }
